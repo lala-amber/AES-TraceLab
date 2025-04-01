@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+  <meta charset="UTF-8" />
+  <title>AES 可视化分析平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
+</head>
+
+<body>
+  <div id="particles-js"></div>
+<div id="particles-js"></div>
+<div class="container">
+  <h1 class="mb-4 text-light">AES 可视化分析平台</h1>
+
+  <!-- S-box 分析 -->
+  <div class="card p-3 mb-4">
+    <h4>🔍 多字节 S-box 分析</h4>
+    <form id="sbox-form">
+      <input type="text" class="form-control mb-2" id="inputBytes" placeholder="如：0x3f, 0x00, 255">
+      <button type="submit" class="btn btn-primary btn-sm">分析</button>
+    </form>
+    <table class="table table-bordered table-dark mt-3" id="resultTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>输入</th><th>输入 bin</th><th>S-box</th><th>S-box bin</th>
+          <th>XOR</th><th>汉明距</th><th>校验</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- S-box & Inv S-box -->
+  <div class="card p-3 mb-4">
+    <h4>AES S-box
+      <span class="hex-toggle" onclick="toggleHex()">十六进制切换</span>
+      <button class="btn btn-sm btn-light float-end" onclick="exportCSV('sbox')">导出 CSV</button>
+    </h4>
+    <input class="form-control mb-2" id="sboxSearch" placeholder="搜索（如 0x3f）">
+    <table class="table table-sm table-bordered table-dark" id="sboxTable"></table>
+
+    <h4 class="mt-4">逆 S-box
+      <button class="btn btn-sm btn-light float-end" onclick="exportCSV('inv')">导出 CSV</button>
+    </h4>
+    <table class="table table-sm table-bordered table-dark" id="invSboxTable"></table>
+  </div>
+
+  <!-- S-box 逆查找 -->
+  <div class="card p-3 mb-4">
+    <h4>🔁 逆查找 S-box 映射</h4>
+    <input class="form-control mb-2" id="revSearch" placeholder="输入 S-box 输出值，如 0x75">
+    <p id="revResult" class="text-info"></p>
+  </div>
+
+  <!-- AES 全轮加密可视化 -->
+  <div class="card p-3 mb-4">
+    <h4>🔐 AES 全轮加密可视化</h4>
+    <input class="form-control mb-2" id="aesFullInput" placeholder="输入 16 字节明文">
+    <input class="form-control mb-2" id="aesFullKey" placeholder="输入 16 字节密钥">
+    <button class="btn btn-primary btn-sm mb-2" onclick="runAESFull()">运行加密</button>
+    <div id="aesMatrixDisplay"></div>
+    <button class="btn btn-outline-light btn-sm mt-2" onclick="exportAES('csv')">导出 CSV</button>
+    <button class="btn btn-outline-light btn-sm mt-2" onclick="exportAES('json')">导出 JSON</button>
+  </div>
+</div>
+
+<!-- JavaScript 逻辑 -->
+<script>
+let hexMode = true, sboxMatrix = [], invMatrix = [], lastRounds = [];
+
+function toggleHex() {
+  hexMode = !hexMode;
+  renderTable(sboxMatrix, "sboxTable");
+  renderTable(invMatrix, "invSboxTable");
+}
+
+function renderTable(matrix, id) {
+  const table = document.getElementById(id);
+  table.innerHTML = "";
+  matrix.forEach((row, rowIndex) => {
+    const tr = document.createElement("tr");
+    row.forEach((val, colIndex) => {
+      const td = document.createElement("td");
+      td.textContent = hexMode ? val : parseInt(val, 16);
+      td.setAttribute("data-dec", parseInt(val, 16));
+      if (id === "sboxTable") {
+        td.setAttribute("data-input", `0x${(rowIndex*16+colIndex).toString(16).padStart(2,'0')}`);
+      }
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+}
+
+function exportCSV(type) {
+  const matrix = type === "sbox" ? sboxMatrix : invMatrix;
+  const rows = matrix.map(row => row.join(",")).join("\n");
+  const blob = new Blob([rows], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = type + "_table.csv";
+  a.click();
+}
+
+async function loadTables() {
+  const res = await fetch("/tables");
+  const data = await res.json();
+  sboxMatrix = data.sbox;
+  invMatrix = data.inv_sbox;
+  renderTable(sboxMatrix, "sboxTable");
+  renderTable(invMatrix, "invSboxTable");
+}
+
+document.getElementById("sbox-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const input = document.getElementById("inputBytes").value.trim();
+  const values = input.split(/[\s,]+/).map(v => v.startsWith("0x") ? parseInt(v, 16) : parseInt(v));
+  const res = await fetch("/analyze", {
+    method: "POST", headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ values })
+  });
+  const data = await res.json();
+  const tbody = document.querySelector("#resultTable tbody");
+  tbody.innerHTML = "";
+  data.forEach(row => {
+    const tr = document.createElement("tr");
+    ["input", "input_bin", "sbox", "sbox_bin", "xor", "hamming", "check"].forEach(k => {
+      const td = document.createElement("td");
+      td.textContent = row[k];
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  document.getElementById("resultTable").style.display = "table";
+});
+
+document.getElementById("sboxSearch").addEventListener("input", e => {
+  const val = e.target.value.trim().toLowerCase();
+  document.querySelectorAll("#sboxTable td").forEach(cell => {
+    cell.classList.toggle("highlighted", cell.getAttribute("data-input") === val);
+  });
+});
+
+document.getElementById("revSearch").addEventListener("input", async e => {
+  const val = e.target.value.trim();
+  const res = await fetch("/reverse_sbox", {
+    method: "POST", headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ value: val })
+  });
+
+  const data = await res.json();
+  const box = document.getElementById("revResult");
+
+  if (data.error) {
+    box.textContent = `❌ 错误：${data.error}`;
+  } else if (data.matches && data.matches.length > 0) {
+    box.textContent = `S-box[x] = ${val} ← 匹配输入: ${data.matches.join(', ')}`;
+  } else {
+    box.textContent = `❌ S-box 中没有任何输入映射为 ${val}`;
+  }
+});
+
+
+async function runAESFull() {
+  const parse = s => s.trim().split(/[\s,]+/).map(v => parseInt(v, 16));
+  const input = parse(document.getElementById("aesFullInput").value);
+  const key = parse(document.getElementById("aesFullKey").value);
+  if (input.length !== 16 || key.length !== 16) return alert("请输入 16 字节明文和密钥");
+  const res = await fetch("/aes_full_rounds", {
+    method: "POST", headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ block: input, key: key })
+  });
+  const data = await res.json();
+  lastRounds = data.rounds;
+  displayAESMatrix(lastRounds);
+}
+
+function displayAESMatrix(rounds) {
+  const wrap = document.getElementById("aesMatrixDisplay");
+  wrap.innerHTML = rounds.map(round => {
+    const cells = round.state.map((v, i) => {
+      const changed = round.changed_bytes.includes(i);
+      return `<td class="${changed ? 'highlighted' : ''}">${v}</td>`;
+    });
+    const rows = [...Array(4)].map((_, r) => `<tr>${cells.slice(r*4, r*4+4).join('')}</tr>`).join('');
+    return `<h6>${round.step}</h6><table class="table table-sm table-bordered table-dark">${rows}</table>`;
+  }).join('');
+}
+
+async function exportAES(format) {
+  const res = await fetch("/export", {
+    method: "POST", headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ format: format, rounds: lastRounds })
+  });
+  const blob = format === 'json' ? new Blob([JSON.stringify(await res.json(), null, 2)], {type: 'application/json'}) : await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `aes_rounds.${format}`;
+  a.click();
+}
+
+//✅ 粒子动画 + 访客统计 + 初始化 //
+async function loadVisitors() {
+  const res = await fetch("/visitors");
+  const data = await res.json();
+  document.getElementById("visitorStats").innerHTML =
+    `👤 访问次数：${data.count} ｜🧠 IP 数：${data.ip_count}`;
+document.getElementById("visitorList").innerHTML = data.list.map(v =>
+  `<div style="margin-bottom: 6px;">
+    ${v.type} ${v.ip} - ${v.loc}<br>
+    <small>${v.ua}</small><br>
+    <span style="color: #888;">🕒 ${v.ts}</span>
+  </div>`
+).join('');
+
+}
+setInterval(loadVisitors, 5000);
+
+window.onload = function () {
+  loadTables();
+  loadVisitors();
+
+  tsParticles.load("particles-js", {
+    fullScreen: false,
+    background: { color: { value: "#000000" } },
+    particles: {
+      number: { value: 80 },
+      color: { value: "#00ffff" },
+      links: { enable: true, color: "#00ffff", distance: 120 },
+      shape: { type: "circle" },
+      size: { value: 3 },
+      move: { enable: true, speed: 1.5 },
+      opacity: { value: 0.5 }
+    },
+    interactivity: {
+      events: {
+        onHover: { enable: true, mode: "repulse" },
+        onClick: { enable: true, mode: "push" }
+      },
+      modes: {
+        repulse: { distance: 100 },
+        push: { quantity: 4 }
+      }
+    }
+  });
+};
+</script>
+<div class="card mt-4 p-3 text-light">
+  <h4>🌍 实时访客动态</h4>
+  <div id="visitorStats" class="mb-2"></div>
+  <marquee direction="up" scrollamount="2" height="180" id="visitorList"></marquee>
+</div>
+
+</body>
+</html>
+

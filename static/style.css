@@ -1,0 +1,127 @@
+body {
+  background-color: #121212;
+  color: #f0f0f0;
+  font-family: 'Segoe UI', 'Consolas', 'Menlo', 'Courier New', monospace;
+  font-size: 15px;
+}
+
+.card {
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: scale(1.005);
+}
+
+#particles-js {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  top: 0;
+  left: 0;
+}
+
+input.form-control {
+  background-color: #f9f9f9;
+  color: #000;
+  font-weight: 500;
+  font-family: monospace;
+}
+
+table td {
+  text-align: center;
+  vertical-align: middle;
+  font-family: monospace;
+  font-size: 16px;
+  color: #fdfdfd;
+  padding: 0.45rem !important;
+  border: 1px solid #333;
+  background-color: #1a1a1a; /* ✅ 所有单元格统一背景 */
+  border-radius: 4px;
+  transition: background 0.3s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* ✅ 鼠标悬停 S-box 表格值动画（轻微放大） */
+.sbox-cell:hover {
+  background-color: #00ffff !important;
+  color: #000 !important;
+  font-weight: bold;
+  box-shadow: 0 0 6px #00ffffaa;
+  border: 1px solid #00ffff;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* ✅ 默认 hover 提示（非 sbox-cell） */
+table td:hover {
+  background-color: #2a2a2a;
+  color: #00ffff;
+  cursor: pointer;
+}
+
+/* ✅ 高亮单元格统一视觉，无 scale */
+.highlighted {
+  background-color: #00ffff !important;
+  color: #000 !important;
+  font-weight: bold;
+  border-radius: 4px;
+  border: 1px solid #00ffff;
+  box-shadow: inset 0 0 5px #00ffff80;
+  transition: all 0.2s ease-in-out;
+}
+
+table th {
+  font-weight: bold;
+  font-family: 'Segoe UI', sans-serif;
+  color: #ffffffcc;
+  background-color: #222;
+}
+
+.hex-toggle {
+  cursor: pointer;
+  color: #00afff;
+  font-size: 0.9em;
+  margin-left: 1em;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.hex-toggle:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+h4, h6 {
+  color: #e0e0e0;
+  font-weight: bold;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+button {
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ✅ 移动端适配 */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  table td {
+    font-size: 13px;
+    padding: 0.3rem !important;
+  }
+
+  h2, h4, h6 {
+    font-size: 1.1rem;
+  }
+
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
