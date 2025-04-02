@@ -6,13 +6,6 @@
 <img width="1792" alt="image" src="https://github.com/user-attachments/assets/9e929c4c-eb36-4b13-9687-ce805135f2ff" />
 <img width="1792" alt="image" src="https://github.com/user-attachments/assets/82ab9135-e829-46a3-8887-816fc79fbc08" />
 <img width="1792" alt="image" src="https://github.com/user-attachments/assets/b7c85cd5-d6a1-4720-99d6-3691b7deecb6" />
-![界面截图 1](https://github.com/user-attachments/assets/9ed40a36-ca47-48f2-8120-c966c6cf87bd)
-
-![界面截图 2](https://github.com/user-attachments/assets/209d6762-01fb-4d83-ad24-64fd583f67f2)
-
-![界面截图 3](https://github.com/user-attachments/assets/d5e4857f-838d-48bb-bbe0-964627f47120)
-
-
 ## ✨ 功能亮点
 
 | 功能模块                 | 说明                                                                 |
