@@ -100,5 +100,3 @@ $ docker run -it -p 8080:8080 077fb8ea691e
 Created by @lala-amber@huangxuan
 欢迎 Issue、PR、Star 🌟！
 
-## 📄 License
-MIT License - 自由使用、传播、教学用途优先。
