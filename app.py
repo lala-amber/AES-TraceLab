@@ -48,7 +48,6 @@ def get_tables():
         "inv_sbox": inv_sbox_matrix
     })
 
-# ======== 实时访客记录（缓存去重） ========
 visit_records = []
 ip_set = set()
 visit_cache = {}  # (ip, ua) -> last_time
@@ -80,7 +79,6 @@ def log_visitor():
     except:
         loc = "未知"
 
-    # ✅ 添加访问时间
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     visit_records.append({
@@ -103,8 +101,6 @@ def visitors():
         "list": visit_records[-30:]
     })
 
-
-# ======== 逆 S-box 查找 ========
 @app.route("/reverse_sbox", methods=["POST"])
 def reverse_sbox():
     data = request.get_json()
@@ -119,8 +115,6 @@ def reverse_sbox():
         "value": value,
         "matches": [f"0x{i:02x}" for i in result]
     })
-
-# ======== AES 加密过程可视化 ========
 @app.route("/analyze", methods=["POST"])
 def analyze():
     data = request.get_json()
@@ -144,7 +138,6 @@ def analyze():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# ======== 状态导出接口 ========
 from io import StringIO
 
 @app.route("/export", methods=["POST"])
